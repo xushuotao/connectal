@@ -183,7 +183,7 @@ module  mkPcieHost#(PciId my_pciId)(PcieHost#(DataBusWidth, NumberOfMasters));
 `ifdef PCIE_BSCAN
    Reg#(Bit#(TAdd#(TlpTraceAddrSize,1))) bscanPcieTraceBramWrAddrReg <- mkReg(0);
    BscanBram#(Bit#(TAdd#(TlpTraceAddrSize,1)), TimestampedTlpData) pcieBscanBram <- mkBscanBram(127, bscanPcieTraceBramWrAddrReg, lbscan.loc[1]);
-   mkConnection(pcieBscanBram.bramClient, traceif.tlpdata.bscanBramServer);
+   mkConnection(pcieBscanBram.bramClient, traceif.tlpdata.altBramServer);
    rule tdorule;
       lbscan.loc[1].tdo(pcieBscanBram.data_out());
    endrule
@@ -204,7 +204,7 @@ module  mkPcieHost#(PciId my_pciId)(PcieHost#(DataBusWidth, NumberOfMasters));
    interface BscanTop bscanif = lbscan.loc[0];
 `else
 `ifdef PCIE_TRACE_PORT
-   interface BRAMServer traceBramServer = traceif.tlpdata.bscanBramServer;
+   interface BRAMServer traceBramServer = traceif.tlpdata.altBramServer;
 `endif
 `endif
 endmodule: mkPcieHost
@@ -280,7 +280,7 @@ module mkXilinxPcieHostTop #(Clock pci_sys_clk_p, Clock pci_sys_clk_n, `SYS_CLK_
        defaultValue,
 `endif
        True, pci_sys_clk_p, pci_sys_clk_n);
-`ifdef PCIE3
+`ifdef XilinxUltrascale
    Clock pci_clk_100mhz_buf = clockGen.gen_clk2;
 `else
    Clock pci_clk_100mhz_buf = clockGen.gen_clk;
@@ -304,7 +304,9 @@ module mkXilinxPcieHostTop #(Clock pci_sys_clk_p, Clock pci_sys_clk_n, `SYS_CLK_
 `ifdef PCIE3
    mkConnection(ep7.tlpr, pciehost.pcir, clocked_by pcieClock_, reset_by pcieReset_);
    mkConnection(ep7.tlpc, pciehost.pcic, clocked_by pcieClock_, reset_by pcieReset_);
+`ifndef PCIE_CHANGES_HOSTIF
    mkConnection(ep7.regChanges, pciehost.changes);
+`endif
    let ipciehost = (interface PcieHost;
 		    interface msixEntry = pciehost.msixEntry;
 		    interface master = pciehost.master;
@@ -316,7 +318,9 @@ module mkXilinxPcieHostTop #(Clock pci_sys_clk_p, Clock pci_sys_clk_n, `SYS_CLK_
 		    endinterface);
 `else
    mkConnection(ep7.tlp, pciehost.pci, clocked_by pcieClock_, reset_by pcieReset_);
+`ifndef PCIE_CHANGES_HOSTIF
    mkConnection(ep7.regChanges, pciehost.changes, clocked_by pcieClock_, reset_by pcieReset_);
+`endif
    let ipciehost = pciehost;
 `endif
 
@@ -334,6 +338,9 @@ module mkXilinxPcieHostTop #(Clock pci_sys_clk_p, Clock pci_sys_clk_n, `SYS_CLK_
 
    interface PcieEndpointX7 tep7 = ep7;
    interface PcieHost tpciehost = ipciehost;
+`ifdef PCIE_CHANGES_HOSTIF
+   interface PipeOut tchanges = ep7.regChanges;
+`endif
 
    interface pcieClock = ep7.epPcieClock;
    interface pcieReset = ep7.epPcieReset;

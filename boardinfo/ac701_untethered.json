@@ -1,11 +1,10 @@
 {
     "options": {
-        "bsvdefines" : ["XILINX=1", "Artix7",  "PCIE", "PCIE1", "PcieHostInterface", "PhysAddrWidth=40", "PcieLanes=4",
+        "bsvdefines" : ["XILINX=1", "Artix7", "PhysAddrWidth=40", "PcieLanes=4", "UNTETHERED=1",
 		       	"CONNECTAL_BITS_DEPENDENCES=hw/mkTop.bit", "CONNECTAL_RUN_SCRIPT=$(CONNECTALDIR)/scripts/run.pcietest"],
         "os" : "ubuntu",
         "partname" : "xc7a200tfbg676-2",
-        "need_pcie" : "x7_gen1x8",
-        "TOP" : "PcieTop",
+        "TOP" : "UntetheredTop",
         "constraints": [],
         "implconstraints": ["constraints/xilinx/ac701.xdc", "constraints/xilinx/pcie-clocks.xdc"],
         "runscript" : "run.pcietest",
@@ -77,5 +76,12 @@
         }
     },
     "fmc": {
-    }
+    },
+    "pins": {
+	"cpu_reset": {
+	    "PACKAGE_PIN": "U4",
+	    "IOSTANDARD": "LVCMOS15",
+	    "PIO_DIRECTION": "INPUT"
+	}
+    }	
 }
